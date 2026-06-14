@@ -59,6 +59,39 @@ Example scoring formula for each tip row:
     IF(SIGN(C2-D2)=SIGN(VLOOKUP(B2,Matches!A:G,6,FALSE)-VLOOKUP(B2,Matches!A:G,7,FALSE)),1,0)))
 ```
 
+## Applying this to an existing Google Sheet
+
+You do not need to rebuild your tipping sheet from scratch. Add the automation in a way that leaves your existing tips and formulas intact:
+
+1. **Make a copy of the current workbook** before adding any script or formulas.
+2. **Identify your existing tabs and columns** for participant names, fixture labels, predicted home score, predicted away score, and any existing points columns.
+3. **Add a new `Matches` tab** using the schema above. Treat this tab as API-managed and avoid manual edits after the first setup.
+4. **Map existing tips to `match_id` values** by adding a `match_id` helper column to your current tips tab. This is safer than matching on team names, because team names can vary by provider.
+5. **Update your leaderboard formulas** to read actual scores from `Matches` via `match_id`, instead of manually entered result cells.
+6. **Paste the Apps Script into the existing spreadsheet** from **Extensions → Apps Script**. A script bound to the existing spreadsheet can call `SpreadsheetApp.getActive()` and write directly to its tabs.
+7. **Run one manual sync first** and verify the API data in `Matches` before installing the recurring trigger.
+
+If you want help adapting this to the exact workbook, share a scrubbed copy of the sheet structure rather than private live data. Useful options are:
+
+- a copied Google Sheet with edit access granted to the account or workspace you are using with your coding assistant;
+- exported CSV files for each tab, with participant names anonymised if needed;
+- screenshots of the header rows and a few sample rows;
+- a written column map such as `Tips!A = participant`, `Tips!B = home team`, `Tips!C = away team`, `Tips!D = home tip`, `Tips!E = away tip`.
+
+Do **not** share API keys, personal email addresses, private participant details, or any credentials. Put secrets only in Apps Script Script Properties.
+
+### Existing sheet adapter example
+
+If your current tips tab is not named `Tips`, or its columns are different, keep the API-managed `Matches` tab unchanged and adapt the leaderboard lookup to your current columns. For example, if your existing tab is named `Predictions` and column `F` contains the provider `match_id`, use `F2` as the lookup key:
+
+```gs
+=IF(OR(VLOOKUP(F2,Matches!A:G,6,FALSE)="",VLOOKUP(F2,Matches!A:G,7,FALSE)=""),0,
+  IF(AND(D2=VLOOKUP(F2,Matches!A:G,6,FALSE),E2=VLOOKUP(F2,Matches!A:G,7,FALSE)),3,
+    IF(SIGN(D2-E2)=SIGN(VLOOKUP(F2,Matches!A:G,6,FALSE)-VLOOKUP(F2,Matches!A:G,7,FALSE)),1,0)))
+```
+
+In that example, `D2` is the predicted home score, `E2` is the predicted away score, and `F2` is the fixture ID.
+
 ## Apps Script setup
 
 1. Open the Google Sheet.
